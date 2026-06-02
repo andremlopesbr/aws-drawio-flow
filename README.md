@@ -1,102 +1,108 @@
-# Gerenciamento e Provedor de Infraestrutura de Aplicação na AWS
+# Gerenciamento de Instâncias EC2 e Arquitetura de Fluxos na AWS
 
 [![AWS](https://img.shields.io/badge/AWS-100%25-orange?style=for-the-badge&logo=amazon-aws&logoColor=white)](https://aws.amazon.com/)
 [![Terraform](https://img.shields.io/badge/Terraform-IaC-purple?style=for-the-badge&logo=terraform&logoColor=white)](https://www.terraform.io/)
 [![Draw.io](https://img.shields.io/badge/Draw.io-Diagram-blue?style=for-the-badge&logo=diagrams.net&logoColor=white)](https://app.diagrams.net/)
 
-Este repositório contém a modelagem arquitetural e a definição de infraestrutura como código (IaC) para um fluxo de gerenciamento de dados resiliente e seguro na AWS. O projeto representa um fluxo de aplicação web hospedado em instâncias EC2, integrado a bancos de dados relacionais e pipelines serverless de armazenamento de objetos.
+Este repositório contém o projeto de gerenciamento de instâncias Amazon EC2, volumes EBS e integração de serviços AWS, desenvolvido como parte de um desafio prático para a **DIO (Digital Innovation One)**. O repositório contém a documentação das atividades, o diagrama arquitetural feito no Draw.io e scripts de infraestrutura como código (IaC).
 
 ---
 
-## 🗺️ Visão Geral da Arquitetura
+## 🎯 Objetivo do Laboratório
 
-O diagrama abaixo ilustra o fluxo de dados e o zoneamento de rede estabelecido para esta arquitetura:
-
-![Arquitetura AWS](./architecture.png)
-
-> [!NOTE]
-> **Nota para o Avaliador:** O diagrama acima é gerado a partir do arquivo [`Desafio_DIO_AWS.drawio`](./Desafio_DIO_AWS.drawio). Para exportá-lo, siga as instruções na seção [Exportando o Diagrama](#-como-exportar-o-diagrama).
+O principal objetivo deste laboratório é aplicar na prática os conceitos fundamentais de administração e provisionamento de infraestrutura em nuvem na AWS, focando em:
+* Criação, configuração e controle do ciclo de vida de servidores virtuais (Amazon EC2).
+* Armazenamento persistente em bloco (Amazon EBS) e estratégias de backup resilientes com Snapshots.
+* Modelagem visual de arquiteturas integrando serviços de computação, banco de dados, serverless e armazenamento de objetos.
 
 ---
 
-## 🛠️ Detalhamento dos Componentes
+## 🗺️ Captura do Diagrama Gerado (Arquitetura)
 
-A infraestrutura foi projetada seguindo as melhores práticas descritas no **AWS Well-Architected Framework**:
+O fluxo de arquitetura projetado representa uma aplicação web hospedada na AWS que interage com bancos de dados relacionais e grava logs/dados de forma assíncrona usando uma pipeline serverless:
 
-1. **Virtual Private Cloud (VPC):**
-   - Criação de um ambiente de rede logicamente isolado com bloco CIDR `10.0.0.0/16`.
-   - Divisão inteligente de sub-redes:
-     - **Subnets Públicas (`10.0.1.0/24`):** Onde residem os servidores de aplicação web (EC2) que precisam receber tráfego direto da internet.
-     - **Subnets Privadas (`10.0.2.0/24` e `10.0.3.0/24`):** Onde residem o banco de dados (RDS) e as funções de processamento (Lambda), protegidos contra acessos externos diretos.
+![Arquitetura AWS](./images/arquitetura.png)
 
-2. **Amazon EC2 (Application Server):**
-   - Servidor virtual responsável pela execução da API / Aplicação principal.
-   - Configuração de perfil de instância IAM (**IAM Instance Profile**) para autenticação segura com outros serviços da AWS sem chaves em texto claro.
-
-3. **Amazon EBS (Elastic Block Store):**
-   - Volume de armazenamento persistente do tipo `gp3` de alta performance anexado à instância EC2, ideal para armazenamento de logs de aplicação ou arquivos temporários que requerem baixa latência.
-
-4. **Amazon RDS (Relational Database Service):**
-   - Banco de dados relacional (PostgreSQL) implantado em sub-redes privadas.
-   - Acesso estritamente limitado através de Security Groups para aceitar requisições originadas apenas da subnet da aplicação (EC2).
-
-5. **AWS Lambda & Amazon S3 (Pipeline Serverless):**
-   - **Trigger/Invocação:** A aplicação rodando no EC2 invoca a função AWS Lambda para processamentos assíncronos ou tarefas sob demanda.
-   - **Armazenamento:** O Lambda executa o processamento e armazena de forma persistente os resultados estruturados em um bucket privado do **Amazon S3** com versionamento ativado.
+> [!TIP]
+> O arquivo editável deste diagrama está localizado em [`diagrams/arquitetura.drawio`](./diagrams/arquitetura.drawio). Para aprender a exportar e atualizar esta imagem, veja a seção [Exportando o Diagrama](#-como-exportar-o-diagrama).
 
 ---
 
-## 🛡️ Segurança & DevOpsSec
+## 🗂️ Estrutura do Projeto
 
-A segurança foi integrada como prioridade em toda a modelagem:
+O repositório está organizado de acordo com as melhores práticas de organização de projetos:
 
-* **Princípio do Menor Privilégio:** As funções IAM associadas à EC2 e ao Lambda limitam estritamente quais recursos e ações podem ser executados (ex: o Lambda possui permissão de leitura/escrita restrita a apenas um bucket S3 específico).
-* **Bloqueio de Acesso Público no S3:** O bucket S3 possui políticas rígidas de bloqueio de acesso público (`block_public_acls = true`, `block_public_policy = true`), garantindo que nenhum dado vaze para a internet.
-* **Segurança de Rede (Security Groups):**
-  - **EC2 SG:** Permite entrada apenas nas portas `80` (HTTP), `443` (HTTPS) e `22` (SSH - restrito em ambiente produtivo).
-  - **RDS SG:** Permite entrada na porta `5432` (PostgreSQL) **apenas** quando originada do Security Group da instância EC2.
-
----
-
-## ⚙️ Infraestrutura como Código (Terraform)
-
-Para demonstrar a maturidade técnica do projeto, toda a infraestrutura desenhada no diagrama foi mapeada e codificada na pasta [`/terraform`](./terraform):
-
-```bash
-terraform/
-├── main.tf          # Definição dos recursos AWS (VPC, EC2, RDS, Lambda, S3, IAM)
-├── variables.tf     # Parametrização e variáveis do ambiente
-├── outputs.tf       # Exposição dos endpoints e IPs gerados após o deploy
-└── lambda/
-    └── index.py     # Código de teste executado pela função Lambda
+```text
+aws-drawio-flow/
+│
+├── diagrams/
+│   └── arquitetura.drawio     # Arquivo fonte do diagrama editável no Draw.io
+│
+├── images/
+│   └── arquitetura.png        # Exportação visual do diagrama de arquitetura
+│
+├── docs/
+│   └── observacoes.md         # Anotações detalhadas sobre EC2, EBS e Snapshots
+│
+├── terraform/                 # Opcional: Scripts de Infraestrutura como Código (IaC)
+│   ├── main.tf
+│   ├── variables.tf
+│   └── outputs.tf
+│
+└── README.md                  # Documentação principal do projeto
 ```
 
-### Como Inicializar o Terraform (Opcional)
+---
 
-Caso possua o Terraform CLI instalado, você pode validar a consistência sintática do projeto executando:
+## 🛠️ Serviços AWS Utilizados
 
-```bash
-# Navegar até a pasta do Terraform
-cd terraform
+* **Amazon EC2 (Elastic Compute Cloud):** Servidor virtual para hospedagem da aplicação.
+* **Amazon EBS (Elastic Block Store):** Armazenamento em bloco de alta performance anexado ao EC2.
+* **Amazon RDS (Relational Database Service):** Banco de dados relacional (PostgreSQL) para armazenamento persistente e estruturado.
+* **AWS Lambda:** Execução de processamentos serverless acionados pela aplicação.
+* **Amazon S3 (Simple Storage Service):** Armazenamento de arquivos e logs gerados pelo processamento do Lambda.
+* **AWS IAM (Identity and Access Management):** Regras de acesso seguro entre os serviços usando o princípio do menor privilégio.
 
-# Inicializar os provedores
-terraform init
+---
 
-# Validar a sintaxe dos arquivos
-terraform validate
+## 🚀 Passo a Passo Executado
 
-# Planejar a execução e visualizar os recursos que seriam criados
-terraform plan
-```
+1. **Provisionamento do Servidor:** Inicialização de uma instância EC2 usando a AMI Linux 2.
+2. **Configuração de Segurança:** Configuração do Security Group da EC2 permitindo entradas apenas nas portas necessárias (`80`, `443` e `22`).
+3. **Gerenciamento de Disco:** Criação de um volume adicional EBS e anexação ao servidor EC2.
+4. **Resiliência e Backup:** Realização manual e automatizada de Snapshots do volume EBS para armazenamento seguro no S3.
+5. **Simulação de Ciclo de Vida:** Testes de parada (Stop), inicialização (Start) e término (Terminate) para entendimento do comportamento de persistência de dados.
+6. **Modelagem no Draw.io:** Desenho e refinamento do fluxo completo de rede e integração (VPC, Subnets, EC2, RDS, Lambda, S3).
+
+---
+
+## 💡 Aprendizados Obtidos
+
+* **Persistência vs Efemeridade:** Diferença crucial entre armazenamento root e volumes adicionais EBS durante o término de instâncias.
+* **Vantagens de Snapshots Incrementais:** Economia de espaço e custo ao realizar backups em bloco.
+* **Segurança de Rede:** Importância do uso de sub-redes privadas para expor o banco de dados (RDS) apenas ao servidor de aplicação (EC2).
+* **IaC:** Utilização de ferramentas como Terraform para traduzir a arquitetura visual do Draw.io diretamente em código reprodutível.
+
+---
+
+## 🏁 Conclusão
+
+A prática consolidou a importância de planejar a infraestrutura antes da implantação física. O uso conjunto de diagramação (Draw.io) e ferramentas de provisionamento permite que equipes criem ambientes escaláveis, altamente disponíveis e que sigam as melhores práticas de segurança desde a concepção do projeto.
 
 ---
 
 ## 🔄 Como Exportar o Diagrama
 
-Para manter a documentação visual atualizada no GitHub:
+Se desejar atualizar a imagem do diagrama em seu repositório:
+1. Abra o [Draw.io](https://app.diagrams.net/) (Web ou Desktop).
+2. Carregue o arquivo [`diagrams/arquitetura.drawio`](./diagrams/arquitetura.drawio).
+3. Vá em **Arquivo ➔ Exportar como ➔ PNG...** (Zoom `100%`, Fundo Transparente).
+4. Substitua o arquivo [`images/arquitetura.png`](./images/arquitetura.png).
 
-1. Abra o arquivo [`Desafio_DIO_AWS.drawio`](./Desafio_DIO_AWS.drawio) usando o site [draw.io](https://app.diagrams.net/) ou o aplicativo Desktop do Draw.io.
-2. No menu superior, vá em **Arquivo (File) ➔ Exportar como (Export as) ➔ PNG...**
-3. Configure o fator de zoom em `100%` e marque a opção **Fundo Transparente**.
-4. Salve o arquivo com o nome `architecture.png` na pasta raiz deste repositório.
-5. Faça o commit e push do novo arquivo `architecture.png` para atualizar o gráfico no topo deste README.
+---
+
+## 📝 Para o Avaliador AWS/DIO
+
+Selecione e copie o texto abaixo para utilizar na caixa de texto da entrega da plataforma da DIO:
+
+> Neste projeto foi desenvolvida uma documentação visual utilizando Draw.io para representar uma arquitetura AWS composta pelos serviços EC2, EBS, Lambda e S3. Durante a atividade foram revisados conceitos relacionados ao gerenciamento de instâncias EC2, armazenamento com EBS, criação de snapshots e integração com serviços serverless. O repositório contém o diagrama da arquitetura, documentação do processo e observações adquiridas durante a prática.
