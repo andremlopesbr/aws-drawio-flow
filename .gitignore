@@ -1,0 +1,99 @@
+# ==========================================
+# Terraform / IaC Ignored Files
+# ==========================================
+# Local .terraform path
+.terraform/
+
+# Local state files and backups
+*.tfstate
+*.tfstate.*
+
+# Crash log files
+crash.log
+crash.*.log
+
+# Exclude all .tfvars files in production, which contain sensitive data
+*.tfvars
+*.tfvars.json
+
+# Ignore override files
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Include override directories
+!override.tf/
+!override.tf.json/
+!*_override.tf/
+!*_override.tf.json/
+
+# CLI configuration files
+.terraformrc
+terraform.rc
+
+# Lambda generated packages
+terraform/lambda/*.zip
+
+# ==========================================
+# Python / Cache Ignored Files
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Pytest / Coverage
+.pytest_cache/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.htmlcov/
+
+# Virtual Environments
+.venv/
+venv/
+ENV/
+env/
+
+# ==========================================
+# Operating System & IDE Cache
+# ==========================================
+# OS Files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editors and IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+.project
+.pydevproject
+.settings/
